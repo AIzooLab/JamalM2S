@@ -1,0 +1,8 @@
+from transformers import pipeline
+
+nlp_pipeline = pipeline("text-generation", model="gpt2")
+
+def generate_text_with_hugging_face(user_input):
+    response = nlp_pipeline(user_input, max_length=50)
+    generated_text = response[0]['generated_text'].strip()
+    return generated_text
