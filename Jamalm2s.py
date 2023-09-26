@@ -5,6 +5,8 @@ import hashlib
 import json
 import time
 import speech_recognition as sr
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import filestack
 
 app = Flask(__name__)
 
@@ -16,6 +18,15 @@ openai.api_key = config['openai_api_key']
 wolfram_alpha_api_key = config['wolfram_alpha_api_key']
 github_token = config['github_access_token']
 azure_token = config['azure_api_key']
+filestack_api_key = config['filestack_api_key']
+
+# Initialize OpenAI GPT-3.5 Turbo model and tokenizer
+model_name = "gpt3.5-turbo"
+gpt3_model = GPT2LMHeadModel.from_pretrained(model_name)
+gpt3_tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+
+# Initialize Filestack client
+filestack_client = filestack.Client(filestack_api_key)
 
 @app.route('/')
 def index():
@@ -24,18 +35,10 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.form['user_input']
-    
-    # Send user input to OpenAI for response
-    openai_response = openai.Completion.create(
-        engine="davinci",
-        prompt=user_input,
-        max_tokens=50
-    )
-    assistant_response = openai_response.choices[0].text.strip()
-    
-    return jsonify({'response': assistant_response})
+    chatbot_response = generate_chatbot_response(user_input)
+    return jsonify({'response': chatbot_response})
 
-@app.route('/voice-interaction', methods=['POST'])
+@app.route('/voice_interaction', methods=['POST'])
 def voice_interaction():
     recognizer = sr.Recognizer()
     
@@ -46,42 +49,36 @@ def voice_interaction():
     try:
         voice_input = recognizer.recognize_google(audio)
         print("Voice Input:", voice_input)
-        
-        # Perform actions based on voice input
-        if "weather" in voice_input:
-            response = query_wolfram_alpha("current weather")
-        elif "location" in voice_input:
-            response = get_location_address("New York")
-        else:
-            response = "Sorry, I could not understand your voice."
-            
+        response = process_voice_input(voice_input)
         return jsonify({'response': response})
-        
     except sr.UnknownValueError:
         return jsonify({'response': "Sorry, I could not understand your voice."})
     except sr.RequestError:
         return jsonify({'response': "Sorry, I'm having trouble accessing the microphone."})
 
-def query_wolfram_alpha(query):
-    url = f"http://api.wolframalpha.com/v2/query?input={query}&format=plaintext&output=JSON&appid={wolfram_alpha_api_key}"
-    response = requests.get(url)
-    data = response.json()
-    result = data["queryresult"]["pods"][1]["subpods"][0]["plaintext"]
-    return result
+@app.route('/upload_file', methods=['POST'])
+def upload_file():
+    file_url = request.form['file_url']
+    uploaded_file_url = upload_to_filestack(file_url)
+    return jsonify({'uploaded_file_url': uploaded_file_url})
 
-@app.route('/github-repo', methods=['GET'])
-def get_github_repo():
-    headers = {'Authorization': f'Bearer {github_token}'}
-    response = requests.get('https://api.github.com/repos/yourusername/yourrepository', headers=headers)
-    repo_info = response.json()
-    return jsonify(repo_info)
+def generate_chatbot_response(user_input):
+    response = openai.Completion.create(
+        engine="davinci",
+        prompt=user_input,
+        max_tokens=50
+    )
+    chatbot_response = response.choices[0].text.strip()
+    return chatbot_response
 
-@app.route('/azure-service', methods=['GET'])
-def get_azure_service():
-    headers = {'Authorization': f'Bearer {azure_token}'}
-    response = requests.get('https://management.azure.com/...', headers=headers)
-    service_info = response.json()
-    return jsonify(service_info)
+def process_voice_input(voice_input):
+    # Implement logic to process voice input
+    return "Response to voice input"
+
+def upload_to_filestack(file_url):
+    new_file_link = filestack_client.upload(url=file_url)
+    return new_file_link.url
 
 if __name__ == '__main__':
     app.run(debug=True)
+
