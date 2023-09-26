@@ -1,0 +1,8 @@
+import requests
+
+unity_auth_token = "Tokken=your-token"
+
+def send_unity_request():
+    headers = {'Authorization': unity_auth_token}
+    response = requests.get('https://api.unity.com/v1/oauth2/authorize?cid=####3aaebe00af&event=next', headers=headers)
+    return response.text
