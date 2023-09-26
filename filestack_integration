@@ -1,0 +1,11 @@
+import requests
+
+def upload_file(file):
+    headers = {'Authorization': f'Bearer {config["filestack_api_key"]}'}
+    files = {'fileUpload': file.read()}
+    response = requests.post('https://www.filestackapi.com/api/store/S3', headers=headers, files=files)
+    if response.status_code == 200:
+        file_url = response.json()['url']
+        return f'File uploaded successfully. URL: {file_url}'
+    else:
+        return 'File upload failed.'
