@@ -9,5 +9,4 @@ def get_chatbot_response(user_input, context=""):
         prompt=prompt,
         max_tokens=50
     )
-    assistant_response = openai_response.choices[0].text.strip()
-    return assistant_response
+    return openai_response.choices[0].text.strip()
