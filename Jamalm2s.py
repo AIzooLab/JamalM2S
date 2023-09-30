@@ -68,8 +68,7 @@ def generate_chatbot_response(user_input):
         prompt=user_input,
         max_tokens=50
     )
-    chatbot_response = response.choices[0].text.strip()
-    return chatbot_response
+    return response.choices[0].text.strip()
 
 def process_voice_input(voice_input):
     # Implement logic to process voice input
